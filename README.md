@@ -11,6 +11,7 @@ Built with **Next.js 16 (App Router, Turbopack)**, **React 19**, **TypeScript**,
 - **Analyze** — overall ATS score plus 10 scored dimensions (ATS, formatting, grammar, readability, keywords, experience, projects, skills, impact, professionalism), each with strengths, weaknesses, and concrete fixes.
 - **Match** — paste a job description to get a match score, matched/missing skills, missing keywords, recommendations, and a tailored summary.
 - **Rewrite** — regenerate the summary, experience, projects, skills, or the whole resume in 9 style presets (ATS Optimized, Frontend, Backend, Full Stack, SWE, Startup, Enterprise, Internship, Senior).
+- **Export** — download any AI rewrite as a cleanly formatted, single-column PDF (`jspdf`) or DOCX (`docx`), generated client-side. The original uploaded file stays retrievable via a short-lived signed URL.
 - **Track** — every analysis and match is stored per resume version so you can watch scores improve.
 
 ## Architecture
@@ -34,6 +35,7 @@ src/
   lib/
     ai/                client.ts (LLM), resume-ai.ts (prompts + cache)
     parsing/           extract-text.ts (pdf/docx)
+    export/            resume-doc.ts (client-side PDF/DOCX download)
     schemas/           resume.ts (Zod: parsed resume, analysis, match, rewrite)
     auth.ts, session.ts, db.ts, redis.ts, uploadthing.ts
   generated/prisma/    Prisma 7 generated client (gitignored)
