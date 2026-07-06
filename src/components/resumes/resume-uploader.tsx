@@ -159,7 +159,7 @@ export function ResumeUploader() {
         {SPECS.map((s) => (
           <span
             key={s}
-            className="label-mono border-border rounded-[3px] border px-2 py-0.5"
+            className="label-mono border-border rounded-md border px-2 py-0.5"
           >
             {s}
           </span>
