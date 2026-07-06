@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Better Auth ----------
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions        Session[]
+  accounts        Account[]
+  resumes         Resume[]
+  analyses        Analysis[]
+  jobDescriptions JobDescription[]
+  jobMatches      JobMatch[]
+  rewrites        Rewrite[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ---------- Resume domain ----------
+
+model Resume {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  fileName  String
+  fileUrl   String
+  fileKey   String?
+  fileType  String // "pdf" | "docx"
+  fileSize  Int
+  rawText   String   @db.Text
+  parsed    Json? // structured resume data extracted by AI
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  analyses   Analysis[]
+  jobMatches JobMatch[]
+  rewrites   Rewrite[]
+
+  @@index([userId, createdAt])
+  @@map("resume")
+}
+
+model Analysis {
+  id           String   @id @default(cuid())
+  resumeId     String
+  resume       Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overallScore Int
+  result       Json // full structured analysis: section scores, strengths, weaknesses, suggestions
+  model        String? // AI model used
+  createdAt    DateTime @default(now())
+
+  @@index([resumeId, createdAt])
+  @@index([userId, createdAt])
+  @@map("analysis")
+}
+
+model JobDescription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  company   String?
+  content   String   @db.Text
+  extracted Json? // skills/keywords extracted by AI
+  createdAt DateTime @default(now())
+
+  jobMatches JobMatch[]
+
+  @@index([userId, createdAt])
+  @@map("job_description")
+}
+
+model JobMatch {
+  id               String         @id @default(cuid())
+  resumeId         String
+  resume           Resume         @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescriptionId String
+  jobDescription   JobDescription @relation(fields: [jobDescriptionId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchScore       Int
+  result           Json // similarity breakdown, missing keywords, recommendations
+  createdAt        DateTime       @default(now())
+
+  @@index([userId, createdAt])
+  @@index([resumeId])
+  @@map("job_match")
+}
+
+model Rewrite {
+  id        String   @id @default(cuid())
+  resumeId  String
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  style     String // "ats" | "frontend" | "backend" | "fullstack" | ...
+  section   String // "full" | "summary" | "experience" | "projects" | "skills"
+  content   Json // rewritten content
+  createdAt DateTime @default(now())
+
+  @@index([resumeId, createdAt])
+  @@map("rewrite")
+}
