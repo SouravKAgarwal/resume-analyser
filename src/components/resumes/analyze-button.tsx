@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { runAnalysis } from "@/features/resumes/actions";
 import { Button } from "@/components/ui/button";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 export function AnalyzeButton({ resumeId }: { resumeId: string }) {
@@ -33,12 +33,12 @@ export function AnalyzeButton({ resumeId }: { resumeId: string }) {
       {busy ? (
         <>
           <Loader2 className="size-4 animate-spin" aria-hidden />
-          Analyzing… this can take up to a minute
+          Reading… this can take up to a minute
         </>
       ) : (
         <>
-          <Sparkles className="size-4" aria-hidden />
-          Run AI analysis
+          <Activity className="size-4" aria-hidden />
+          Run analysis
         </>
       )}
     </Button>

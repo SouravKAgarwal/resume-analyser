@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
+import { utapi } from "@/lib/uploadthing-server";
 import { detectFileType, extractResumeText } from "@/lib/parsing/extract-text";
 import {
   analyzeResume,
@@ -24,9 +25,20 @@ function fail(e: unknown): { ok: false; error: string } {
   return { ok: false, error: message };
 }
 
+// Only accept URLs served by UploadThing — the server fetches this URL, so an
+// unrestricted value would be an SSRF vector.
+const isUploadThingUrl = (u: string) => {
+  try {
+    const { protocol, hostname } = new URL(u);
+    return protocol === "https:" && (hostname === "utfs.io" || hostname.endsWith(".ufs.sh"));
+  } catch {
+    return false;
+  }
+};
+
 const processUploadSchema = z.object({
-  fileUrl: z.string().url(),
-  fileKey: z.string().min(1),
+  fileUrl: z.string().url().refine(isUploadThingUrl, "Unrecognized file host."),
+  fileKey: z.string().min(1).max(255),
   fileName: z.string().min(1).max(255),
   fileSize: z.number().int().positive().max(8 * 1024 * 1024),
   fileMime: z.string().optional(),
@@ -190,6 +202,28 @@ export async function runRewrite(
 
     revalidatePath(`/resumes/${resume.id}`);
     return { ok: true, data: { rewriteId: rewrite.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Mints a short-lived signed URL to download the user's original uploaded file. */
+export async function getOriginalResumeUrl(
+  resumeId: string,
+): Promise<ActionResult<{ url: string }>> {
+  try {
+    const user = await requireUser();
+    const resume = await prisma.resume.findFirst({
+      where: { id: resumeId, userId: user.id },
+      select: { fileKey: true },
+    });
+    if (!resume) return { ok: false, error: "Resume not found." };
+    if (!resume.fileKey) return { ok: false, error: "No stored file for this resume." };
+
+    const res = await utapi.getSignedURL(resume.fileKey, { expiresIn: 60 * 60 });
+    const url = (res as { ufsUrl?: string; url?: string }).ufsUrl ?? (res as { url?: string }).url;
+    if (!url) return { ok: false, error: "Could not create a download link." };
+    return { ok: true, data: { url } };
   } catch (e) {
     return fail(e);
   }

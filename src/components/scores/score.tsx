@@ -1,102 +1,230 @@
 import { cn } from "@/lib/utils";
+import type { CSSProperties } from "react";
 
-export function scoreColor(score: number) {
-  if (score >= 80) return "text-emerald-500";
-  if (score >= 60) return "text-amber-500";
-  return "text-red-500";
+/* ---- Score scale ---------------------------------------------------------
+   Thresholds: >=80 good, >=60 warn, else poor. The gauge and every meter
+   read from the same zones, so color always means the same thing. */
+
+export type ScoreZone = "good" | "warn" | "poor";
+
+export function scoreZone(score: number): ScoreZone {
+  if (score >= 80) return "good";
+  if (score >= 60) return "warn";
+  return "poor";
 }
 
-export function scoreStroke(score: number) {
-  if (score >= 80) return "stroke-emerald-500";
-  if (score >= 60) return "stroke-amber-500";
-  return "stroke-red-500";
+/** CSS custom-property reference for a score, usable in color/fill/stroke. */
+export function scoreVar(score: number): string {
+  return `var(--score-${scoreZone(score)})`;
 }
 
-export function scoreLabel(score: number) {
+export function scoreLabel(score: number): string {
   if (score >= 85) return "Excellent";
   if (score >= 70) return "Good";
   if (score >= 55) return "Needs work";
   return "Weak";
 }
 
-/** SVG circular score gauge — renders on the server, no JS shipped. */
-export function ScoreRing({
+// Point on the dial for a given score. 0 -> left (180deg), 100 -> right (0deg).
+function polar(cx: number, cy: number, r: number, score: number) {
+  const a =
+    (180 * (1 - Math.max(0, Math.min(100, score)) / 100) * Math.PI) / 180;
+  return [cx + r * Math.cos(a), cy - r * Math.sin(a)] as const;
+}
+
+function arc(cx: number, cy: number, r: number, s0: number, s1: number) {
+  const [x0, y0] = polar(cx, cy, r, s0);
+  const [x1, y1] = polar(cx, cy, r, s1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+
+/**
+ * Precision dial gauge — a 180° instrument with a zoned scale, a needle,
+ * tick marks, and a numeric readout. Renders entirely on the server; no JS,
+ * no animation. This is the product's signature element.
+ */
+export function ScoreGauge({
   score,
-  size = 120,
-  strokeWidth = 10,
+  size = 240,
+  showScale,
   className,
 }: {
   score: number;
   size?: number;
-  strokeWidth?: number;
+  showScale?: boolean;
   className?: string;
 }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.max(0, Math.min(100, score));
-  const offset = circumference * (1 - clamped / 100);
+  const value = Math.round(Math.max(0, Math.min(100, score)));
+  const withScale = showScale ?? size >= 150;
+  const color = scoreVar(value);
+
+  // Internal coordinate system: 200 wide, baseline low, readout below.
+  const cx = 100;
+  const cy = 104;
+  const r = 84;
+  const trackW = 6;
+  const [nx, ny] = polar(cx, cy, r - 22, value); // needle tip
+
+  const majors = [0, 20, 40, 60, 80, 100];
+  const minors = [10, 30, 50, 70, 90];
 
   return (
     <div
-      className={cn("relative inline-flex items-center justify-center", className)}
+      className={cn("inline-flex flex-col items-center", className)}
       role="img"
-      aria-label={`Score: ${clamped} out of 100`}
+      aria-label={`Score ${value} out of 100`}
     >
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
-          className="stroke-muted"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
+      <svg
+        width={size}
+        height={size * 0.75}
+        viewBox="0 0 200 150"
+        fill="none"
+        aria-hidden
+      >
+        {/* neutral track */}
+        <path
+          d={arc(cx, cy, r, 0, 100)}
+          stroke="var(--border)"
+          strokeWidth={trackW}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className={cn("transition-[stroke-dashoffset] duration-700", scoreStroke(clamped))}
         />
+
+        {/* tick marks crossing the scale */}
+        {[...majors, ...minors].map((t) => {
+          const major = majors.includes(t);
+          const [ox, oy] = polar(cx, cy, r + (major ? 6 : 4), t);
+          const [ix, iy] = polar(cx, cy, r - (major ? 7 : 4), t);
+          return (
+            <line
+              key={t}
+              x1={ix.toFixed(2)}
+              y1={iy.toFixed(2)}
+              x2={ox.toFixed(2)}
+              y2={oy.toFixed(2)}
+              stroke="var(--muted-foreground)"
+              strokeWidth={major ? 1.25 : 0.75}
+              opacity={major ? 0.7 : 0.45}
+            />
+          );
+        })}
+
+        {/* value arc, colored by zone */}
+        <path
+          d={arc(cx, cy, r, 0, value)}
+          stroke={color}
+          strokeWidth={trackW}
+          strokeLinecap="round"
+        />
+
+        {/* scale numerals */}
+        {withScale &&
+          majors.map((t) => {
+            const [lx, ly] = polar(cx, cy, r - 20, t);
+            return (
+              <text
+                key={t}
+                x={lx.toFixed(2)}
+                y={(ly + 3).toFixed(2)}
+                textAnchor="middle"
+                fontSize="8"
+                fontFamily="var(--font-mono)"
+                fill="var(--muted-foreground)"
+              >
+                {t}
+              </text>
+            );
+          })}
+
+        {/* needle + hub — only on the full-size instrument; compact reads by arc alone */}
+        {withScale && (
+          <g
+            className="needle-sweep"
+            style={
+              {
+                transformOrigin: `${cx}px ${cy}px`,
+                // start pinned at score 0 (points left), sweep to value
+                ["--needle-start" as string]: `${-1.8 * value}deg`,
+              } as CSSProperties
+            }
+          >
+            <line
+              x1={cx}
+              y1={cy}
+              x2={nx.toFixed(2)}
+              y2={ny.toFixed(2)}
+              stroke="var(--foreground)"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+            />
+            <circle cx={cx} cy={cy} r={7} fill="var(--foreground)" />
+            <circle cx={cx} cy={cy} r={2.5} fill="var(--card)" />
+          </g>
+        )}
+
+        {/* readout below the baseline */}
+        <text
+          x={cx}
+          y={144}
+          textAnchor="middle"
+          fontFamily="var(--font-mono)"
+          fontWeight={600}
+          fontSize="34"
+          fill="var(--foreground)"
+        >
+          {value}
+          <tspan fontSize="14" fontWeight={500} fill="var(--muted-foreground)">
+            /100
+          </tspan>
+        </text>
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-3xl font-bold tabular-nums", scoreColor(clamped))}>
-          {clamped}
-        </span>
-        <span className="text-muted-foreground text-xs">/ 100</span>
-      </div>
     </div>
   );
 }
 
-export function ScoreBar({ label, score }: { label: string; score: number }) {
-  const clamped = Math.max(0, Math.min(100, score));
+/** Compact linear instrument meter — ticked track, filled by zone, mono value. */
+export function ScoreMeter({
+  label,
+  score,
+  showMax = false,
+}: {
+  label: string;
+  score: number;
+  showMax?: boolean;
+}) {
+  const value = Math.round(Math.max(0, Math.min(100, score)));
+  const color = scoreVar(value);
+
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">{label}</span>
-        <span className={cn("font-semibold tabular-nums", scoreColor(clamped))}>
-          {clamped}
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm">{label}</span>
+        <span
+          className="font-mono text-sm font-medium tabular-nums"
+          style={{ color }}
+        >
+          {value}
+          {showMax && (
+            <span className="text-muted-foreground text-xs"> /100</span>
+          )}
         </span>
       </div>
       <div
-        className="bg-muted h-2 overflow-hidden rounded-full"
+        className="relative h-2 overflow-hidden rounded-[2px]"
+        style={{
+          backgroundColor: "var(--secondary)",
+          // hairline ticks every 10%
+          backgroundImage:
+            "repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 10%)",
+        }}
         role="progressbar"
-        aria-valuenow={clamped}
+        aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={label}
       >
         <div
-          className={cn(
-            "h-full rounded-full",
-            clamped >= 80 ? "bg-emerald-500" : clamped >= 60 ? "bg-amber-500" : "bg-red-500",
-          )}
-          style={{ width: `${clamped}%` }}
+          className="h-full rounded-[2px]"
+          style={{ width: `${value}%`, backgroundColor: color }}
         />
       </div>
     </div>

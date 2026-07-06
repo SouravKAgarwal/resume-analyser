@@ -1,19 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { Toaster } from "@/components/ui/sonner";
 import { uploadRouter } from "@/app/api/uploadthing/core";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display: technical grotesque, drafting-table feel — used for headings only.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display-src",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Body: engineered, highly legible.
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-sans-src",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+// Data/instrument: gauge numerals, ticks, labels.
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-mono-src",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -33,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <NextSSRPlugin routerConfig={extractRouterConfig(uploadRouter)} />
