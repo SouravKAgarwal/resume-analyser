@@ -50,7 +50,7 @@ export default async function ResumePage({
             v{resume.version} · {resume.fileName} · {(resume.fileSize / 1024).toFixed(0)} KB · {resume.fileType.toUpperCase()}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DownloadOriginalButton resumeId={resume.id} />
           <DeleteResumeButton resumeId={resume.id} />
           <AnalyzeButton resumeId={resume.id} />

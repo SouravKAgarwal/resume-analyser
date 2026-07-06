@@ -70,7 +70,7 @@ export function ScoreGauge({
 
   return (
     <div
-      className={cn("inline-flex flex-col items-center", className)}
+      className={cn("inline-flex max-w-full flex-col items-center", className)}
       role="img"
       aria-label={`Score ${value} out of 100`}
     >
@@ -79,6 +79,7 @@ export function ScoreGauge({
         height={size * 0.75}
         viewBox="0 0 200 150"
         fill="none"
+        className="h-auto max-w-full"
         aria-hidden
       >
         {/* neutral track */}

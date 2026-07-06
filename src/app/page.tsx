@@ -144,7 +144,7 @@ export default async function HomePage() {
               see precisely where the score comes from — and what to fix first.
             </p>
           </div>
-          <ul className="border-border mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-lg border sm:grid-cols-2 lg:grid-cols-5">
+          <ul className="border-border mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-lg border sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {DIMENSIONS.map((d, i) => (
               <li key={d} className="bg-card p-5">
                 <div className="label-mono">
@@ -184,7 +184,7 @@ export default async function HomePage() {
                       alt=""
                       width={300}
                       height={200}
-                      className="object-contain"
+                      className="h-auto w-full max-w-[300px] object-contain"
                     />
                   </span>
                 </div>

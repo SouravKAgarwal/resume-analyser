@@ -13,8 +13,8 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-svh flex-col">
       <header className="border-border bg-background sticky top-0 z-40 border-b">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-6 px-4">
-          <nav className="flex items-center gap-6">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:gap-6">
+          <nav className="flex items-center gap-4 sm:gap-6">
             <Link href="/dashboard" className="flex items-center gap-2">
               <GaugeMark className="size-5" />
               <span className="font-display hidden text-sm font-semibold tracking-tight sm:inline">
@@ -37,7 +37,7 @@ export default async function AppLayout({
           <UserMenu name={user.name} email={user.email} />
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">{children}</main>
     </div>
   );
 }
