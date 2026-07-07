@@ -23,6 +23,20 @@ export const uploadRouter = {
       // action so the client can show parsing progress.
       return { uploadedBy: metadata.userId, fileKey: file.key };
     }),
+
+  avatarUploader: f({
+    image: { maxFileSize: "2MB", maxFileCount: 1 },
+  })
+    .middleware(async () => {
+      const session = await auth.api.getSession({ headers: await headers() });
+      if (!session?.user) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // The client persists the new image via updateUser(); we just hand
+      // back the CDN URL and key.
+      return { uploadedBy: metadata.userId, url: file.ufsUrl, key: file.key };
+    }),
 } satisfies FileRouter;
 
 export type UploadRouter = typeof uploadRouter;

@@ -4,10 +4,9 @@ import { getSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { ScoreGauge, ScoreMeter } from "@/components/scores/score";
 import { GaugeMark } from "@/components/scores/gauge-mark";
-import Image from "next/image";
-import { Read, Upload, Rewrite } from "@/assets";
+import { UploadArt, ReadArt, RewriteArt } from "@/components/landing/step-art";
+import { ProtectedMedia } from "@/components/landing/protected-media";
 
-// Illustrative reading shown on the landing gauge — not a real analysis.
 const SAMPLE = [
   { label: "ATS compatibility", score: 82 },
   { label: "Impact & metrics", score: 58 },
@@ -32,19 +31,19 @@ const STEPS = [
   {
     n: "01",
     title: "Upload",
-    src: Upload,
+    Art: UploadArt,
     body: "Drop in a PDF or DOCX. We pull the text and rebuild its structure the way a parser sees it.",
   },
   {
     n: "02",
     title: "Read",
-    src: Read,
+    Art: ReadArt,
     body: "Ten dimensions are scored against recruiter and ATS criteria, then reported on one /100 scale.",
   },
   {
     n: "03",
     title: "Rewrite",
-    src: Rewrite,
+    Art: RewriteArt,
     body: "Turn the weakest sections into stronger, ATS-friendly wording — then measure again.",
   },
 ];
@@ -174,24 +173,15 @@ export default async function HomePage() {
                 <span className="font-mono text-4xl font-semibold tabular-nums">
                   {s.n}
                 </span>
-                <div className="flex items-center mt-4 ">
-                  <span
-                    className="border-border bg-secondary/40 flex items-center justify-center overflow-hidden rounded-md border"
-                    aria-hidden
-                  >
-                    <Image
-                      src={s.src}
-                      alt=""
-                      width={300}
-                      height={200}
-                      className="h-auto w-full max-w-[300px] object-contain"
-                    />
-                  </span>
+                <div className="mt-4 flex items-center">
+                  <ProtectedMedia className="border-border bg-secondary/40 flex w-full items-center justify-center overflow-hidden rounded-md border">
+                    <s.Art className="max-h-100 h-full w-full max-w-75" />
+                  </ProtectedMedia>
                 </div>
                 <h3 className="font-display text-xl font-semibold">
                   {s.title}
                 </h3>
-                <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {s.body}
                 </p>
               </div>

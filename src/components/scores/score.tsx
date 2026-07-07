@@ -109,12 +109,21 @@ export function ScoreGauge({
           );
         })}
 
-        {/* value arc, colored by zone */}
+        {/* value arc — draws from 0 to value on load, its stroke shifting from
+           the low-end color up to the final zone color as it sweeps. */}
         <path
+          className="arc-sweep"
           d={arc(cx, cy, r, 0, value)}
+          pathLength={100}
           stroke={color}
           strokeWidth={trackW}
           strokeLinecap="round"
+          style={
+            {
+              ["--arc-from" as string]: "var(--score-poor)",
+              ["--arc-to" as string]: color,
+            } as CSSProperties
+          }
         />
 
         {/* scale numerals */}

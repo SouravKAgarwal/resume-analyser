@@ -1,25 +1,35 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 
-export async function getResumes(userId: string) {
-  return prisma.resume.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      fileName: true,
-      fileType: true,
-      version: true,
-      createdAt: true,
-      analyses: {
+/** Cache tags, scoped per user so one user's mutation never busts another's. */
+export const resumesTag = (userId: string) => `resumes:${userId}`;
+export const dashboardTag = (userId: string) => `dashboard:${userId}`;
+
+export function getResumes(userId: string) {
+  return unstable_cache(
+    () =>
+      prisma.resume.findMany({
+        where: { userId },
         orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, overallScore: true, createdAt: true },
-      },
-    },
-  });
+        select: {
+          id: true,
+          title: true,
+          fileName: true,
+          fileType: true,
+          version: true,
+          createdAt: true,
+          analyses: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { id: true, overallScore: true, createdAt: true },
+          },
+        },
+      }),
+    ["resumes", userId],
+    { tags: [resumesTag(userId)], revalidate: 60 },
+  )();
 }
 
 export async function getResume(userId: string, resumeId: string) {
@@ -63,32 +73,38 @@ export async function getJobMatch(userId: string, matchId: string) {
   });
 }
 
-export async function getDashboardData(userId: string) {
-  const [resumes, recentAnalyses, recentMatches, scoreHistory] =
-    await Promise.all([
-      prisma.resume.count({ where: { userId } }),
-      prisma.analysis.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: { resume: { select: { id: true, title: true } } },
-      }),
-      prisma.jobMatch.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: {
-          resume: { select: { id: true, title: true } },
-          jobDescription: { select: { title: true, company: true } },
-        },
-      }),
-      prisma.analysis.findMany({
-        where: { userId },
-        orderBy: { createdAt: "asc" },
-        take: 20,
-        select: { overallScore: true, createdAt: true },
-      }),
-    ]);
+export function getDashboardData(userId: string) {
+  return unstable_cache(
+    async () => {
+      const [resumes, recentAnalyses, recentMatches, scoreHistory] =
+        await Promise.all([
+          prisma.resume.count({ where: { userId } }),
+          prisma.analysis.findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            take: 5,
+            include: { resume: { select: { id: true, title: true } } },
+          }),
+          prisma.jobMatch.findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            take: 5,
+            include: {
+              resume: { select: { id: true, title: true } },
+              jobDescription: { select: { title: true, company: true } },
+            },
+          }),
+          prisma.analysis.findMany({
+            where: { userId },
+            orderBy: { createdAt: "asc" },
+            take: 20,
+            select: { overallScore: true, createdAt: true },
+          }),
+        ]);
 
-  return { resumes, recentAnalyses, recentMatches, scoreHistory };
+      return { resumes, recentAnalyses, recentMatches, scoreHistory };
+    },
+    ["dashboard", userId],
+    { tags: [dashboardTag(userId)], revalidate: 60 },
+  )();
 }

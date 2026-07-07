@@ -12,10 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, LayoutDashboard, FileText } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, LayoutDashboard, FileText, User } from "lucide-react";
 
-export function UserMenu({ name, email }: { name: string; email: string }) {
+export function UserMenu({
+  name,
+  email,
+  image,
+}: {
+  name: string;
+  email: string;
+  image?: string | null;
+}) {
   const router = useRouter();
   const initials = name
     .split(" ")
@@ -29,6 +37,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
           <Avatar className="size-8">
+            {image && <AvatarImage src={image} alt="" />}
             <AvatarFallback className="text-xs">{initials || "U"}</AvatarFallback>
           </Avatar>
         </Button>
@@ -47,6 +56,11 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
         <DropdownMenuItem asChild>
           <Link href="/resumes">
             <FileText aria-hidden /> My resumes
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <User aria-hidden /> Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

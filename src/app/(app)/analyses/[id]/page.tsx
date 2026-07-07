@@ -62,7 +62,7 @@ export default async function AnalysisPage({
       {/* Overall reading */}
       <Card className="graph-grid overflow-hidden">
         <CardContent className="flex flex-col items-center gap-8 py-8 sm:flex-row sm:items-center sm:py-10">
-          <ScoreGauge score={result.overallScore} size={220} />
+          <ScoreGauge score={result.overallScore} size={220} className="shrink-0" />
           <div className="flex-1 space-y-3 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
               <span className="label-mono">Overall reading</span>
@@ -133,7 +133,7 @@ export default async function AnalysisPage({
                   words.map((w) => (
                     <span
                       key={w}
-                      className="rounded-[3px] border px-1.5 py-0.5 text-xs"
+                      className="rounded-md border px-1.5 py-0.5 text-xs"
                       style={{ borderColor: tone, color: tone }}
                     >
                       {w}
@@ -152,14 +152,14 @@ export default async function AnalysisPage({
           <Card key={key}>
             <CardHeader>
               <div className="flex items-center gap-4">
-                <ScoreGauge score={s.score} size={104} />
-                <div>
-                  <CardTitle className="text-base">{SECTION_LABELS[key] ?? key}</CardTitle>
-                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                    {s.explanation}
-                  </p>
-                </div>
+                <ScoreGauge score={s.score} size={104} className="shrink-0" />
+                <CardTitle className="text-xl font-bold sm:text-2xl">
+                  {SECTION_LABELS[key] ?? key}
+                </CardTitle>
               </div>
+              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                {s.explanation}
+              </p>
             </CardHeader>
             <CardContent className="grid gap-6 lg:grid-cols-3">
               <Column tone="var(--score-good)" title="Strengths" items={s.strengths} empty="None identified" />

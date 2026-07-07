@@ -38,7 +38,7 @@ export default async function MatchPage({
 
       <Card className="graph-grid overflow-hidden">
         <CardContent className="flex flex-col items-center gap-8 py-8 sm:flex-row sm:items-center sm:py-10">
-          <ScoreGauge score={result.matchScore} size={220} />
+          <ScoreGauge score={result.matchScore} size={220} className="shrink-0" />
           <div className="flex-1 space-y-3 text-center sm:text-left">
             <span className="label-mono">Match against posting</span>
             <h1 className="text-2xl font-semibold">

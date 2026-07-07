@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-const dateFmt = new Intl.DateTimeFormat("en", {
+const dateFmt = new Intl.DateTimeFormat("en-IN", {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -23,7 +23,9 @@ export default async function DashboardPage() {
   const latestScore = recentAnalyses[0]?.overallScore;
   const firstScore = scoreHistory[0]?.overallScore;
   const trend =
-    latestScore !== undefined && firstScore !== undefined && scoreHistory.length > 1
+    latestScore !== undefined &&
+    firstScore !== undefined &&
+    scoreHistory.length > 1
       ? latestScore - firstScore
       : null;
 
@@ -32,7 +34,9 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
           <span className="label-mono">Bench</span>
-          <h1 className="text-3xl font-semibold">{user.name.split(" ")[0]}&rsquo;s resumes</h1>
+          <h1 className="text-3xl font-semibold">
+            {user.name.split(" ")[0]}&rsquo;s resumes
+          </h1>
         </div>
         <Button asChild>
           <Link href="/resumes">
@@ -53,7 +57,13 @@ export default async function DashboardPage() {
         <Readout
           label="Change over time"
           value={trend === null ? "—" : `${trend >= 0 ? "+" : ""}${trend}`}
-          color={trend !== null ? (trend >= 0 ? "var(--score-good)" : "var(--score-poor)") : undefined}
+          color={
+            trend !== null
+              ? trend >= 0
+                ? "var(--score-good)"
+                : "var(--score-poor)"
+              : undefined
+          }
         />
       </div>
 
@@ -61,7 +71,9 @@ export default async function DashboardPage() {
         <section className="space-y-4">
           <h2 className="label-mono">Recent analyses</h2>
           {recentAnalyses.length === 0 ? (
-            <Empty>No analyses yet. Upload a resume and run your first reading.</Empty>
+            <Empty>
+              No analyses yet. Upload a resume and run your first reading.
+            </Empty>
           ) : (
             <ul className="border-border divide-border divide-y rounded-md border">
               {recentAnalyses.map((a) => (
@@ -73,10 +85,14 @@ export default async function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate font-medium">{a.resume.title}</p>
                       <p className="text-muted-foreground font-mono text-xs">
-                        {dateFmt.format(a.createdAt)}
+                        {dateFmt.format(new Date(a.createdAt))}
                       </p>
                     </div>
-                    <ScoreGauge score={a.overallScore} size={72} />
+                    <ScoreGauge
+                      score={a.overallScore}
+                      size={72}
+                      className="shrink-0"
+                    />
                   </Link>
                 </li>
               ))}
@@ -87,7 +103,9 @@ export default async function DashboardPage() {
         <section className="space-y-4">
           <h2 className="label-mono">Recent job matches</h2>
           {recentMatches.length === 0 ? (
-            <Empty>No job matches yet. Open a resume and paste a job description.</Empty>
+            <Empty>
+              No job matches yet. Open a resume and paste a job description.
+            </Empty>
           ) : (
             <ul className="border-border divide-border divide-y rounded-md border">
               {recentMatches.map((m) => (
@@ -107,11 +125,12 @@ export default async function DashboardPage() {
                         )}
                       </p>
                       <p className="text-muted-foreground truncate font-mono text-xs">
-                        vs {m.resume.title} · {dateFmt.format(m.createdAt)}
+                        vs {m.resume.title} ·{" "}
+                        {dateFmt.format(new Date(m.createdAt))}
                       </p>
                     </div>
                     <span
-                      className="font-mono text-lg font-semibold tabular-nums"
+                      className="shrink-0 font-mono text-lg font-semibold tabular-nums"
                       style={{ color: scoreVar(m.matchScore) }}
                     >
                       {m.matchScore}
@@ -142,9 +161,16 @@ function Readout({
   return (
     <div className="px-5 py-6">
       <div className="label-mono">{label}</div>
-      <div className="mt-2 font-mono text-4xl font-semibold tabular-nums" style={color ? { color } : undefined}>
+      <div
+        className="mt-2 font-mono text-4xl font-semibold tabular-nums"
+        style={color ? { color } : undefined}
+      >
         {value}
-        {suffix && <span className="text-muted-foreground text-base font-medium">{suffix}</span>}
+        {suffix && (
+          <span className="text-muted-foreground text-base font-medium">
+            {suffix}
+          </span>
+        )}
       </div>
     </div>
   );

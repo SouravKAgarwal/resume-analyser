@@ -10,13 +10,12 @@ import { DeleteResumeButton } from "@/components/resumes/delete-resume-button";
 import { DownloadOriginalButton } from "@/components/resumes/download-original-button";
 import { RewriteDownload } from "@/components/resumes/rewrite-download";
 import { scoreVar } from "@/components/scores/score";
-import { REWRITE_STYLES, type RewriteResult, type RewriteStyle } from "@/lib/schemas/resume";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  REWRITE_STYLES,
+  type RewriteResult,
+  type RewriteStyle,
+} from "@/lib/schemas/resume";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 
@@ -47,7 +46,9 @@ export default async function ResumePage({
           <span className="label-mono">Specimen</span>
           <h1 className="truncate text-3xl font-semibold">{resume.title}</h1>
           <p className="text-muted-foreground font-mono text-xs">
-            v{resume.version} · {resume.fileName} · {(resume.fileSize / 1024).toFixed(0)} KB · {resume.fileType.toUpperCase()}
+            v{resume.version} · {resume.fileName} ·{" "}
+            {(resume.fileSize / 1024).toFixed(0)} KB ·{" "}
+            {resume.fileType.toUpperCase()}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -58,10 +59,19 @@ export default async function ResumePage({
       </div>
 
       <Tabs defaultValue="analyses">
-        <TabsList variant="line" className="border-border h-auto w-full justify-start gap-6 rounded-none border-b pb-0">
-          <TabsTrigger value="analyses" className="flex-none px-0 pb-2.5">Analyses</TabsTrigger>
-          <TabsTrigger value="match" className="flex-none px-0 pb-2.5">Job match</TabsTrigger>
-          <TabsTrigger value="rewrite" className="flex-none px-0 pb-2.5">Rewrite</TabsTrigger>
+        <TabsList
+          variant="line"
+          className="border-border h-auto w-full justify-start gap-6 rounded-none border-b pb-0"
+        >
+          <TabsTrigger value="analyses" className="flex-none px-0 pb-2.5">
+            Analyses
+          </TabsTrigger>
+          <TabsTrigger value="match" className="flex-none px-0 pb-2.5">
+            Job match
+          </TabsTrigger>
+          <TabsTrigger value="rewrite" className="flex-none px-0 pb-2.5">
+            Rewrite
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="analyses" className="mt-6">
@@ -86,14 +96,18 @@ export default async function ResumePage({
                         className="hover:bg-secondary -mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors"
                       >
                         <div>
-                          <p className="font-medium">{dateFmt.format(a.createdAt)}</p>
+                          <p className="font-medium">
+                            {dateFmt.format(new Date(a.createdAt))}
+                          </p>
                         </div>
                         <span
                           className="font-mono text-lg font-semibold tabular-nums"
                           style={{ color: scoreVar(a.overallScore) }}
                         >
                           {a.overallScore}
-                          <span className="text-muted-foreground text-sm">/100</span>
+                          <span className="text-muted-foreground text-sm">
+                            /100
+                          </span>
                         </span>
                       </Link>
                     </li>
@@ -107,10 +121,12 @@ export default async function ResumePage({
         <TabsContent value="match" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Match against a job description</CardTitle>
+              <CardTitle className="text-base">
+                Match against a job description
+              </CardTitle>
               <p className="text-muted-foreground text-sm">
-                Paste a posting to see your match score, missing keywords, and tailored
-                recommendations.
+                Paste a posting to see your match score, missing keywords, and
+                tailored recommendations.
               </p>
             </CardHeader>
             <CardContent>
@@ -134,10 +150,11 @@ export default async function ResumePage({
                         <div className="min-w-0">
                           <p className="truncate font-medium">
                             {m.jobDescription.title}
-                            {m.jobDescription.company && ` · ${m.jobDescription.company}`}
+                            {m.jobDescription.company &&
+                              ` · ${m.jobDescription.company}`}
                           </p>
                           <p className="text-muted-foreground font-mono text-xs">
-                            {dateFmt.format(m.createdAt)}
+                            {dateFmt.format(new Date(m.createdAt))}
                           </p>
                         </div>
                         <span
@@ -145,7 +162,9 @@ export default async function ResumePage({
                           style={{ color: scoreVar(m.matchScore) }}
                         >
                           {m.matchScore}
-                          <span className="text-muted-foreground text-sm">%</span>
+                          <span className="text-muted-foreground text-sm">
+                            %
+                          </span>
                         </span>
                       </Link>
                     </li>
@@ -161,8 +180,8 @@ export default async function ResumePage({
             <CardHeader>
               <CardTitle className="text-base">Rewrite</CardTitle>
               <p className="text-muted-foreground text-sm">
-                Pick a target style and section. The rewrite comes back with stronger,
-                ATS-friendly wording.
+                Pick a target style and section. The rewrite comes back with
+                stronger, ATS-friendly wording.
               </p>
             </CardHeader>
             <CardContent>
@@ -182,15 +201,19 @@ export default async function ResumePage({
                         <span className="capitalize">{rw.section}</span>
                       </CardTitle>
                       <span className="text-muted-foreground font-mono text-xs">
-                        {dateFmt.format(rw.createdAt)}
+                        {dateFmt.format(new Date(rw.createdAt))}
                       </span>
                     </div>
                     <RewriteDownload title={resume.title} content={content} />
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {content.headline && <p className="text-lg font-semibold">{content.headline}</p>}
-                  {content.summary && <p className="text-sm leading-relaxed">{content.summary}</p>}
+                  {content.headline && (
+                    <p className="text-lg font-semibold">{content.headline}</p>
+                  )}
+                  {content.summary && (
+                    <p className="text-sm leading-relaxed">{content.summary}</p>
+                  )}
                   {content.sections.map((s, i) => (
                     <div key={i} className="space-y-2">
                       <h3 className="font-semibold">{s.title}</h3>

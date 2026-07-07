@@ -1,8 +1,5 @@
 import "server-only";
 
-import mammoth from "mammoth";
-import { extractText, getDocumentProxy } from "unpdf";
-
 export type ResumeFileType = "pdf" | "docx";
 
 const MAX_CHARS = 60_000;
@@ -56,12 +53,16 @@ export async function extractResumeText(
     );
   }
 
+  // Parsers are heavy and each only handles one format — load on demand so
+  // they never weigh on unrelated server code paths.
   let text: string;
   if (fileType === "pdf") {
+    const { extractText, getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(new Uint8Array(buffer));
     const result = await extractText(pdf, { mergePages: true });
     text = result.text;
   } else {
+    const { default: mammoth } = await import("mammoth");
     const result = await mammoth.extractRawText({
       buffer: Buffer.from(buffer),
     });
