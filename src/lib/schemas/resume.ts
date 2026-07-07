@@ -124,17 +124,17 @@ export const jobMatchResultSchema = z.object({
 
 export type JobMatchResult = z.infer<typeof jobMatchResultSchema>;
 
+export const structuredResumeSchema = parsedResumeSchema.extend({
+  headline: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? undefined),
+});
+
+export type StructuredResume = z.infer<typeof structuredResumeSchema>;
+
 export const rewriteResultSchema = z.object({
-  headline: z.string().nullish().transform((v) => v ?? undefined),
-  summary: z.string().nullish().transform((v) => v ?? undefined),
-  sections: z
-    .array(
-      z.object({
-        title: z.string(),
-        content: z.array(z.string()).describe("Rewritten lines or bullets"),
-      }),
-    )
-    .default([]),
+  resume: structuredResumeSchema,
   notes: z.array(z.string()).default([]),
 });
 
