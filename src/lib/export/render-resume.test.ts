@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { renderResumeText } from "@/lib/export/render-resume";
+import {
+  renderResumeText,
+  renderResumePdf,
+  renderResumeDocx,
+} from "@/lib/export/render-resume";
 import { structuredResumeSchema } from "@/lib/schemas/resume";
 
 const sample = structuredResumeSchema.parse({
@@ -48,5 +52,23 @@ describe("renderResumeText", () => {
     );
     expect(text).not.toContain("EXPERIENCE");
     expect(text).not.toMatch(/\n{3,}/);
+  });
+});
+
+describe("renderResumePdf", () => {
+  it("returns non-empty PDF bytes starting with %PDF", async () => {
+    const bytes = await renderResumePdf(sample);
+    expect(bytes.byteLength).toBeGreaterThan(500);
+    // "%PDF" magic
+    expect([bytes[0], bytes[1], bytes[2], bytes[3]]).toEqual([0x25, 0x50, 0x44, 0x46]);
+  });
+});
+
+describe("renderResumeDocx", () => {
+  it("returns non-empty DOCX (zip) bytes starting with PK", async () => {
+    const bytes = await renderResumeDocx(sample);
+    expect(bytes.byteLength).toBeGreaterThan(500);
+    // "PK" zip magic
+    expect([bytes[0], bytes[1]]).toEqual([0x50, 0x4b]);
   });
 });
