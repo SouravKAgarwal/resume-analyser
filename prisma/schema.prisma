@@ -93,6 +93,11 @@ model Resume {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  parentId String?
+  parent   Resume?  @relation("lineage", fields: [parentId], references: [id], onDelete: SetNull)
+  children Resume[] @relation("lineage")
+  source   String   @default("upload") // "upload" | "rewrite"
+
   analyses   Analysis[]
   jobMatches JobMatch[]
   rewrites   Rewrite[]
@@ -159,6 +164,7 @@ model Rewrite {
   style     String // "ats" | "frontend" | "backend" | "fullstack" | ...
   section   String // "full" | "summary" | "experience" | "projects" | "skills"
   content   Json // rewritten content
+  childResumeId String? @unique // the Resume this rewrite produced
   createdAt DateTime @default(now())
 
   @@index([resumeId, createdAt])
