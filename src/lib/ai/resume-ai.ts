@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "crypto";
 import { generateJSON, AI_MODEL } from "@/lib/ai/client";
 import { cached } from "@/lib/redis";
+import { formatFixes } from "@/lib/ai/fixes";
 import {
   analysisResultSchema,
   jobMatchResultSchema,
@@ -14,6 +15,7 @@ import {
   type ParsedResume,
   type RewriteResult,
   type RewriteStyle,
+  type StructuredResume,
 } from "@/lib/schemas/resume";
 
 export { AI_MODEL };
@@ -141,41 +143,63 @@ ${rawText}
   );
 }
 
-const SECTION_INSTRUCTIONS: Record<string, string> = {
-  full: "Rewrite the entire resume: headline, summary, and every section (experience, projects, skills, education, achievements).",
-  summary: "Rewrite only the professional headline and summary.",
-  experience:
-    "Rewrite only the work experience section — every role, every bullet.",
-  projects: "Rewrite only the projects section — every project, every bullet.",
-  skills:
-    "Rewrite only the skills section — recategorize and reorder for maximum relevance.",
+const FOCUS_INSTRUCTIONS: Record<string, string> = {
+  full: "Rework the entire resume — headline, summary, and every section.",
+  summary: "Focus hardest on the headline and professional summary; still return the complete resume.",
+  experience: "Focus hardest on the work experience bullets; still return the complete resume.",
+  projects: "Focus hardest on the projects section; still return the complete resume.",
+  skills: "Focus hardest on categorizing and prioritizing skills; still return the complete resume.",
 };
 
 export async function rewriteResume(
-  rawText: string,
+  source: StructuredResume | string,
   style: RewriteStyle,
-  section: keyof typeof SECTION_INSTRUCTIONS,
+  focus: keyof typeof FOCUS_INSTRUCTIONS,
+  analysis: AnalysisResult | null,
 ): Promise<RewriteResult> {
   const styleLabel = REWRITE_STYLES[style];
+  const fixes = formatFixes(analysis);
+  const sourceBlock =
+    typeof source === "string" ? source : JSON.stringify(source, null, 2);
+  const sourceHash = hash(sourceBlock);
+
   return cached(
-    `rewrite:${hash(rawText)}:${style}:${section}`,
+    `rewrite:${sourceHash}:${style}:${focus}:${hash(fixes)}`,
     7 * DAY,
     () =>
       generateJSON({
-        system: `You are an elite resume writer specializing in software engineering resumes. You write ATS-friendly, achievement-oriented content: strong action verbs, quantified impact, no fluff, no first-person pronouns. Target style: "${styleLabel}". Never invent employers, dates, or credentials — but you may sharpen wording and reasonably infer metrics phrasing like "improving performance" only when the original implies it.`,
-        prompt: `${SECTION_INSTRUCTIONS[section]}
+        system: `You are an elite resume writer specializing in software engineering resumes. You produce a COMPLETE, ATS-friendly, achievement-oriented resume: strong action verbs, quantified impact, no fluff, no first-person pronouns. Target style: "${styleLabel}". Never invent employers, dates, credentials, or metrics that are not supported by the source — but sharpen wording and surface impact the source implies. You MUST preserve all personal/contact details (name, email, phone, links) exactly as given.`,
+        prompt: `${FOCUS_INSTRUCTIONS[focus]}
 
-Return JSON:
+Address these issues from the resume analysis wherever the facts allow:
+"""
+${fixes}
+"""
+
+Return JSON with this exact shape:
 {
-  "headline": "professional headline (or null if not applicable)",
-  "summary": "rewritten summary (or null if not applicable)",
-  "sections": [{"title": "section name", "content": ["rewritten line or bullet", ...]}],
+  "resume": {
+    "personal": {"name", "email", "phone", "location", "portfolio", "github", "linkedin"},
+    "headline": "concise professional headline",
+    "summary": "rewritten professional summary",
+    "education": [{"institution", "degree", "field", "startDate", "endDate", "grade"}],
+    "experience": [{"company", "title", "location", "startDate", "endDate", "bullets": [string]}],
+    "projects": [{"name", "description", "technologies": [string], "bullets": [string], "link"}],
+    "skills": [{"category": string, "items": [string]}],
+    "certifications": [string],
+    "achievements": [string],
+    "languages": [string],
+    "publications": [string],
+    "volunteer": [string]
+  },
   "notes": ["what you changed and why", ...]
 }
 
-ORIGINAL RESUME:
+Preserve every factual detail from the source. Use null for genuinely missing fields and [] for missing lists.
+
+SOURCE RESUME${typeof source === "string" ? " TEXT" : " (structured JSON)"}:
 """
-${rawText}
+${sourceBlock}
 """`,
         schema: rewriteResultSchema,
         temperature: 0.4,
