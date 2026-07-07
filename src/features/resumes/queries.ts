@@ -20,6 +20,9 @@ export function getResumes(userId: string) {
           fileType: true,
           version: true,
           createdAt: true,
+          source: true,
+          parentId: true,
+          parent: { select: { id: true, title: true } },
           analyses: {
             orderBy: { createdAt: "desc" },
             take: 1,
@@ -49,6 +52,22 @@ export async function getResume(userId: string, resumeId: string) {
       rewrites: {
         orderBy: { createdAt: "desc" },
         take: 10,
+      },
+      parent: { select: { id: true, title: true, version: true } },
+      children: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          version: true,
+          createdAt: true,
+          source: true,
+          analyses: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { overallScore: true },
+          },
+        },
       },
     },
   });
