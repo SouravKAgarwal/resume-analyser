@@ -71,6 +71,11 @@ export default async function ResumesPage() {
                       <p className="text-muted-foreground font-mono text-xs">
                         v{r.version} · {dateFmt.format(new Date(r.createdAt))}
                       </p>
+                      {r.source === "rewrite" && (
+                        <span className="text-muted-foreground text-xs">
+                          branch{r.parent ? ` of ${r.parent.title}` : ""}
+                        </span>
+                      )}
                     </CardHeader>
                     <CardContent>
                       {latest ? (

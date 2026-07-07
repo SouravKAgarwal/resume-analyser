@@ -8,16 +8,10 @@ import { JobMatchForm } from "@/components/resumes/job-match-form";
 import { RewriteForm } from "@/components/resumes/rewrite-form";
 import { DeleteResumeButton } from "@/components/resumes/delete-resume-button";
 import { DownloadOriginalButton } from "@/components/resumes/download-original-button";
-import { RewriteDownload } from "@/components/resumes/rewrite-download";
+import { ResumeDownload } from "@/components/resumes/resume-download";
 import { scoreVar } from "@/components/scores/score";
-import {
-  REWRITE_STYLES,
-  type RewriteResult,
-  type RewriteStyle,
-} from "@/lib/schemas/resume";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 export const metadata: Metadata = { title: "Resume" };
 
@@ -50,8 +44,18 @@ export default async function ResumePage({
             {(resume.fileSize / 1024).toFixed(0)} KB ·{" "}
             {resume.fileType.toUpperCase()}
           </p>
+          {resume.source === "rewrite" && resume.parent && (
+            <p className="text-muted-foreground text-xs">
+              Branched from{" "}
+              <Link href={`/resumes/${resume.parent.id}`} className="underline">
+                {resume.parent.title}
+              </Link>{" "}
+              · v{resume.parent.version}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ResumeDownload resumeId={resume.id} />
           <DownloadOriginalButton resumeId={resume.id} />
           <DeleteResumeButton resumeId={resume.id} />
           <AnalyzeButton resumeId={resume.id} />
@@ -189,62 +193,48 @@ export default async function ResumePage({
             </CardContent>
           </Card>
 
-          {resume.rewrites.map((rw) => {
-            const content = rw.content as RewriteResult;
-            return (
-              <Card key={rw.id}>
-                <CardHeader>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <CardTitle className="text-base">
-                        {REWRITE_STYLES[rw.style as RewriteStyle] ?? rw.style} ·{" "}
-                        <span className="capitalize">{rw.section}</span>
-                      </CardTitle>
-                      <span className="text-muted-foreground font-mono text-xs">
-                        {dateFmt.format(new Date(rw.createdAt))}
-                      </span>
-                    </div>
-                    <RewriteDownload title={resume.title} content={content} />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {content.headline && (
-                    <p className="text-lg font-semibold">{content.headline}</p>
-                  )}
-                  {content.summary && (
-                    <p className="text-sm leading-relaxed">{content.summary}</p>
-                  )}
-                  {content.sections.map((s, i) => (
-                    <div key={i} className="space-y-2">
-                      <h3 className="font-semibold">{s.title}</h3>
-                      <ul className="space-y-1 text-sm leading-relaxed">
-                        {s.content.map((line, j) => (
-                          <li key={j} className="border-border border-l pl-3">
-                            {line}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                  {content.notes.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h3 className="label-mono mb-2">What changed</h3>
-                        <ul className="text-muted-foreground space-y-1 text-xs leading-relaxed">
-                          {content.notes.map((n, i) => (
-                            <li key={i} className="border-border border-l pl-3">
-                              {n}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+          {resume.children.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Branches</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  Each rewrite is committed as a new resume version you can open,
+                  download, and analyze on its own.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-border divide-y">
+                  {resume.children.map((c) => {
+                    const score = c.analyses[0]?.overallScore;
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          href={`/resumes/${c.id}`}
+                          className="hover:bg-secondary -mx-3 flex items-center justify-between gap-3 rounded-md px-3 py-3 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{c.title}</p>
+                            <p className="text-muted-foreground font-mono text-xs">
+                              v{c.version} · {dateFmt.format(new Date(c.createdAt))}
+                            </p>
+                          </div>
+                          {typeof score === "number" && (
+                            <span
+                              className="font-mono text-lg font-semibold tabular-nums"
+                              style={{ color: scoreVar(score) }}
+                            >
+                              {score}
+                              <span className="text-muted-foreground text-sm">/100</span>
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
