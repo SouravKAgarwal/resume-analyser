@@ -27,7 +27,7 @@ const SECTIONS = {
 export function RewriteForm({ resumeId }: { resumeId: string }) {
   const router = useRouter();
   const [style, setStyle] = useState<RewriteStyle>("ats");
-  const [section, setSection] = useState<keyof typeof SECTIONS>("full");
+  const [focus, setFocus] = useState<keyof typeof SECTIONS>("full");
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const loading = pending || busy;
@@ -51,10 +51,10 @@ export function RewriteForm({ resumeId }: { resumeId: string }) {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Section</Label>
+          <Label>Focus</Label>
           <Select
-            value={section}
-            onValueChange={(v) => setSection(v as keyof typeof SECTIONS)}
+            value={focus}
+            onValueChange={(v) => setFocus(v as keyof typeof SECTIONS)}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -74,11 +74,11 @@ export function RewriteForm({ resumeId }: { resumeId: string }) {
         onClick={() => {
           setBusy(true);
           startTransition(async () => {
-            const result = await runRewrite({ resumeId, style, section });
+            const result = await runRewrite({ resumeId, style, focus });
             setBusy(false);
             if (result.ok) {
-              toast.success("Rewrite generated");
-              router.refresh();
+              toast.success("Branch created");
+              router.push(`/resumes/${result.data.resumeId}`);
             } else {
               toast.error(result.error);
             }
@@ -93,7 +93,7 @@ export function RewriteForm({ resumeId }: { resumeId: string }) {
         ) : (
           <>
             <PenLine className="size-4" aria-hidden />
-            Generate rewrite
+            Generate branch
           </>
         )}
       </Button>
